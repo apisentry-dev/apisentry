@@ -1,0 +1,176 @@
+openapi: "3.0.0"
+info:
+  title: Edge Cases API
+  version: "1.0"
+  description: Tests for allOf, oneOf, anyOf, nested objects, and security edge cases
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    Animal:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    Dog:
+      allOf:
+        - $ref: '#/components/schemas/Animal'
+        - type: object
+          properties:
+            breed:
+              type: string
+
+    Vehicle:
+      oneOf:
+        - type: object
+          properties:
+            wheels:
+              type: integer
+        - type: object
+          properties:
+            propellers:
+              type: integer
+
+    FlexibleType:
+      anyOf:
+        - type: string
+        - type: integer
+
+paths:
+  # BOLA target: numeric ID in path, no auth
+  /users/{userId}:
+    get:
+      summary: Get user by ID
+      operationId: getUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User object
+
+  # BOLA target: UUID in path, with auth
+  /accounts/{accountId}/transactions/{transactionId}:
+    get:
+      summary: Get transaction
+      operationId: getTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Transaction
+
+  # Broken Auth target: DELETE without auth enforcement
+  /admin/users/{userId}:
+    delete:
+      summary: Delete user (admin only)
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # Mass assignment target: allOf in request body
+  /animals:
+    post:
+      summary: Create animal (allOf schema)
+      operationId: createAnimal
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dog'
+      responses:
+        "201":
+          description: Created
+
+  # oneOf in request body
+  /vehicles:
+    post:
+      summary: Create vehicle (oneOf schema)
+      operationId: createVehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vehicle'
+      responses:
+        "201":
+          description: Created
+
+  # No auth + sensitive endpoint
+  /internal/config:
+    get:
+      summary: Get internal config (should be protected)
+      operationId: getConfig
+      parameters:
+        - name: env
+          in: query
+          schema:
+            type: string
+        - name: X-Internal-Token
+          in: header
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Config
+
+  # Rate limit target: no rate limit headers
+  /search:
+    get:
+      summary: Search endpoint
+      operationId: search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Results

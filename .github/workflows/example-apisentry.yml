@@ -1,0 +1,27 @@
+name: API Security Scan
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  api-security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write       # needed for PR comments
+      security-events: write     # needed for SARIF upload
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: APISentry API Security Scan
+        uses: apisentry/apisentry-action@v1
+        with:
+          spec-path: openapi.yaml          # path to your OpenAPI spec
+          base-url: https://api.example.com
+          token: ${{ secrets.API_TOKEN }}  # optional: your API bearer token
+          severity-threshold: high         # fail PR if critical or high found
+          format: sarif                    # uploads to GitHub Code Scanning

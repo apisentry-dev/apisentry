@@ -1,0 +1,168 @@
+name: 'APISentry API Security Scan'
+description: 'AI-powered OWASP API Top 10 security scanner. Finds BOLA, broken auth, mass assignment, rate limiting, and function-level auth vulnerabilities.'
+author: 'APISentry'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  spec-path:
+    description: 'Path to OpenAPI spec file (JSON or YAML)'
+    required: true
+  api-key:
+    description: 'APISentry API key (set as a secret)'
+    required: false
+    default: ''
+  base-url:
+    description: 'Target API base URL (overrides servers in spec)'
+    required: false
+    default: ''
+  token:
+    description: 'Bearer token for authenticated scan requests'
+    required: false
+    default: ''
+  severity-threshold:
+    description: 'Fail the action if findings at this severity or above are found (critical|high|medium|low)'
+    required: false
+    default: 'high'
+  format:
+    description: 'Report format: sarif|json|html|text'
+    required: false
+    default: 'sarif'
+  output-file:
+    description: 'Path to write the report file'
+    required: false
+    default: 'apisentry-results.sarif'
+  ai-analysis:
+    description: 'Enable AI false-positive filtering (requires ANTHROPIC_API_KEY secret)'
+    required: false
+    default: 'false'
+  concurrency:
+    description: 'Number of parallel HTTP workers'
+    required: false
+    default: '5'
+
+outputs:
+  findings-count:
+    description: 'Total number of findings'
+    value: ${{ steps.scan.outputs.findings-count }}
+  critical-count:
+    description: 'Number of critical findings'
+    value: ${{ steps.scan.outputs.critical-count }}
+  high-count:
+    description: 'Number of high findings'
+    value: ${{ steps.scan.outputs.high-count }}
+  results-file:
+    description: 'Path to the generated report file'
+    value: ${{ inputs.output-file }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.26'
+        cache: true
+
+    - name: Install APISentry
+      shell: bash
+      run: |
+        cd ${{ github.action_path }}
+        go build -ldflags "-s -w" -o /usr/local/bin/apisentry .
+
+    - name: Run APISentry scan
+      id: scan
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
+      run: |
+        ARGS="--spec ${{ inputs.spec-path }} --format ${{ inputs.format }} --output ${{ inputs.output-file }} --concurrency ${{ inputs.concurrency }}"
+
+        if [ -n "${{ inputs.base-url }}" ]; then
+          ARGS="$ARGS --target ${{ inputs.base-url }}"
+        fi
+        if [ -n "${{ inputs.token }}" ]; then
+          ARGS="$ARGS --token ${{ inputs.token }}"
+        fi
+        if [ "${{ inputs.ai-analysis }}" = "true" ]; then
+          ARGS="$ARGS --ai"
+        fi
+
+        set +e
+        apisentry scan $ARGS --format json --output /tmp/apisentry-raw.json 2>&1
+        set -e
+
+        # Parse counts from JSON output
+        if [ -f /tmp/apisentry-raw.json ]; then
+          TOTAL=$(jq '.findings | length' /tmp/apisentry-raw.json 2>/dev/null || echo 0)
+          CRITICAL=$(jq '[.findings[] | select(.severity=="CRITICAL")] | length' /tmp/apisentry-raw.json 2>/dev/null || echo 0)
+          HIGH=$(jq '[.findings[] | select(.severity=="HIGH")] | length' /tmp/apisentry-raw.json 2>/dev/null || echo 0)
+        else
+          TOTAL=0; CRITICAL=0; HIGH=0
+        fi
+
+        echo "findings-count=$TOTAL"   >> $GITHUB_OUTPUT
+        echo "critical-count=$CRITICAL" >> $GITHUB_OUTPUT
+        echo "high-count=$HIGH"         >> $GITHUB_OUTPUT
+
+        # Re-run in requested format for the actual output file
+        apisentry scan $ARGS > /dev/null 2>&1 || true
+
+    - name: Upload SARIF to GitHub Code Scanning
+      if: inputs.format == 'sarif' && always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.output-file }}
+      continue-on-error: true
+
+    - name: Comment on PR
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const findings = parseInt('${{ steps.scan.outputs.findings-count }}' || '0');
+          const critical = parseInt('${{ steps.scan.outputs.critical-count }}' || '0');
+          const high     = parseInt('${{ steps.scan.outputs.high-count }}' || '0');
+
+          const icon = critical > 0 ? '🔴' : high > 0 ? '🟠' : findings > 0 ? '🟡' : '✅';
+          const status = critical > 0 ? 'CRITICAL issues found' : high > 0 ? 'HIGH issues found' : findings > 0 ? 'Issues found' : 'No issues found';
+
+          const body = `## ${icon} APISentry Security Scan — ${status}
+
+          | Severity | Count |
+          |----------|-------|
+          | 🔴 Critical | ${critical} |
+          | 🟠 High | ${high} |
+          | 📊 Total | ${findings} |
+
+          ${findings === 0 ? '**All API security checks passed.**' : `**Review the findings before merging.**`}
+
+          <details><summary>About APISentry</summary>
+          Scans for OWASP API Top 10: BOLA, Broken Auth, Mass Assignment, Rate Limiting, Function-Level Auth.
+          </details>`;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body
+          });
+
+    - name: Fail on threshold
+      shell: bash
+      run: |
+        THRESHOLD="${{ inputs.severity-threshold }}"
+        CRITICAL=${{ steps.scan.outputs.critical-count }}
+        HIGH=${{ steps.scan.outputs.high-count }}
+
+        if [ "$THRESHOLD" = "critical" ] && [ "$CRITICAL" -gt 0 ]; then
+          echo "❌ $CRITICAL critical finding(s) found. Blocking merge."
+          exit 1
+        fi
+        if [ "$THRESHOLD" = "high" ] && [ $((CRITICAL + HIGH)) -gt 0 ]; then
+          echo "❌ $((CRITICAL + HIGH)) critical/high finding(s) found. Blocking merge."
+          exit 1
+        fi
+        echo "✅ No findings above threshold ($THRESHOLD)."

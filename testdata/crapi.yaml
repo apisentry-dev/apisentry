@@ -1,0 +1,290 @@
+openapi: "3.0.0"
+info:
+  title: crAPI (Completely Ridiculous API)
+  version: "1.0"
+  description: OWASP intentionally vulnerable API for security testing
+
+servers:
+  - url: http://localhost:8888
+
+paths:
+  /identity/api/v2/user/login:
+    post:
+      summary: User login
+      operationId: userLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: JWT token
+
+  /identity/api/v2/user/signup:
+    post:
+      summary: User signup
+      operationId: userSignup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                number:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: User created
+
+  /identity/api/v2/user/dashboard:
+    get:
+      summary: Get user dashboard
+      operationId: getUserDashboard
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User info with vehicle details
+
+  /identity/api/v2/user/change-email:
+    post:
+      summary: Change email (OTP bypass vulnerability)
+      operationId: changeEmail
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        "200":
+          description: Email changed
+
+  /identity/api/v2/user/reset-password:
+    post:
+      summary: Reset password
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                otp:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Password reset
+
+  /community/api/v2/community/posts/{postId}:
+    get:
+      summary: Get community post by ID (BOLA vulnerable)
+      operationId: getPost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post details
+
+  /community/api/v2/community/posts/{postId}/comment:
+    post:
+      summary: Add comment to post
+      operationId: addComment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+      responses:
+        "200":
+          description: Comment added
+
+  /workshop/api/shop/products:
+    get:
+      summary: Get all shop products
+      operationId: getProducts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of products
+
+  /workshop/api/shop/orders:
+    get:
+      summary: Get all orders (BOLA vulnerable)
+      operationId: getOrders
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of orders
+    post:
+      summary: Place an order
+      operationId: placeOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_id:
+                  type: integer
+                quantity:
+                  type: integer
+      responses:
+        "200":
+          description: Order placed
+
+  /workshop/api/shop/orders/{orderId}:
+    get:
+      summary: Get order by ID (BOLA vulnerable)
+      operationId: getOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order details
+    put:
+      summary: Update order (mass assignment vulnerable)
+      operationId: updateOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                quantity:
+                  type: integer
+      responses:
+        "200":
+          description: Order updated
+
+  /workshop/api/mechanic/mechanic_report:
+    get:
+      summary: Get mechanic reports (BOLA vulnerable)
+      operationId: getMechanicReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: report_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Report details
+
+  /identity/api/v2/admin/users:
+    get:
+      summary: Get all users (admin endpoint)
+      operationId: adminGetUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of all users
+
+  /identity/api/v2/admin/users/{userId}:
+    get:
+      summary: Get user by ID (admin endpoint)
+      operationId: adminGetUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

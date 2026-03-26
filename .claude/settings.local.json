@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Bash(go get:*)",
+      "Bash(grep -r \"Haiku\\\\|haiku\" /c/Users/Voznuk/go/pkg/mod/github.com/anthropics/anthropic-sdk-go@v1.27.1/*.go)",
+      "Bash(npm --version)",
+      "Bash(npx create-next-app@latest apisentry-web --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
