@@ -78,10 +78,14 @@ runs:
       env:
         ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
       run: |
-        ARGS="--spec ${{ inputs.spec-path }} --format ${{ inputs.format }} --output ${{ inputs.output-file }} --concurrency ${{ inputs.concurrency }}"
+        # Build base args (without --format/--output — added per-run below)
+        ARGS="--spec ${{ inputs.spec-path }} --concurrency ${{ inputs.concurrency }}"
 
         if [ -n "${{ inputs.base-url }}" ]; then
           ARGS="$ARGS --target ${{ inputs.base-url }}"
+        else
+          echo "::error::base-url input is required"
+          exit 1
         fi
         if [ -n "${{ inputs.token }}" ]; then
           ARGS="$ARGS --token ${{ inputs.token }}"
@@ -90,25 +94,32 @@ runs:
           ARGS="$ARGS --ai"
         fi
 
+        # Single scan: always output JSON first to parse counts
         set +e
-        apisentry scan $ARGS --format json --output /tmp/apisentry-raw.json 2>&1
+        apisentry scan $ARGS --format json --output /tmp/apisentry-raw.json
+        SCAN_EXIT=$?
         set -e
 
         # Parse counts from JSON output
+        TOTAL=0; CRITICAL=0; HIGH=0
         if [ -f /tmp/apisentry-raw.json ]; then
           TOTAL=$(jq '.findings | length' /tmp/apisentry-raw.json 2>/dev/null || echo 0)
           CRITICAL=$(jq '[.findings[] | select(.severity=="CRITICAL")] | length' /tmp/apisentry-raw.json 2>/dev/null || echo 0)
           HIGH=$(jq '[.findings[] | select(.severity=="HIGH")] | length' /tmp/apisentry-raw.json 2>/dev/null || echo 0)
-        else
-          TOTAL=0; CRITICAL=0; HIGH=0
         fi
 
-        echo "findings-count=$TOTAL"   >> $GITHUB_OUTPUT
+        echo "findings-count=$TOTAL"    >> $GITHUB_OUTPUT
         echo "critical-count=$CRITICAL" >> $GITHUB_OUTPUT
         echo "high-count=$HIGH"         >> $GITHUB_OUTPUT
 
-        # Re-run in requested format for the actual output file
-        apisentry scan $ARGS > /dev/null 2>&1 || true
+        # Convert to requested format if different from JSON
+        FORMAT="${{ inputs.format }}"
+        OUTPUT="${{ inputs.output-file }}"
+        if [ "$FORMAT" = "json" ]; then
+          cp /tmp/apisentry-raw.json "$OUTPUT"
+        else
+          apisentry scan $ARGS --format "$FORMAT" --output "$OUTPUT" || true
+        fi
 
     - name: Upload SARIF to GitHub Code Scanning
       if: inputs.format == 'sarif' && always()

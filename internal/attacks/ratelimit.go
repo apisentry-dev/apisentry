@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/apisentry/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/parser"
 )
 
 // RateLimitTest represents a rate limiting / resource consumption test case

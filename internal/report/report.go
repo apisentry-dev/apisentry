@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apisentry/apisentry/internal/scanner"
+	"github.com/apisentry-dev/apisentry/internal/scanner"
 )
 
 // Generate writes a report to outFile in the given format ("json", "html", "sarif", "text")

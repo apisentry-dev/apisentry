@@ -48,6 +48,12 @@ func ParseSpec(specPath string) ([]Endpoint, error) {
 
 	var endpoints []Endpoint
 
+	// Collect global security requirements (applied to all operations by default)
+	var globalSecurity openapi3.SecurityRequirements
+	if doc.Security != nil {
+		globalSecurity = doc.Security
+	}
+
 	for path, pathItem := range doc.Paths.Map() {
 		ops := map[string]*openapi3.Operation{
 			"GET":    pathItem.Get,
@@ -101,8 +107,8 @@ func ParseSpec(specPath string) ([]Endpoint, error) {
 				ep.RequestBody = rb
 			}
 
-			// Detect if auth is required
-			ep.RequiresAuth = requiresAuth(op)
+			// Detect if auth is required (checks operation-level, falls back to global)
+			ep.RequiresAuth = requiresAuth(op, globalSecurity)
 
 			endpoints = append(endpoints, ep)
 		}
@@ -134,12 +140,22 @@ func extractType(schema *openapi3.Schema) string {
 	return "object"
 }
 
-// requiresAuth checks if an operation requires authentication
-func requiresAuth(op *openapi3.Operation) bool {
-	if op.Security == nil {
+// requiresAuth checks if an operation requires authentication.
+// Operation-level security overrides global; an explicit empty security []
+// means "no auth" even if global security is set.
+func requiresAuth(op *openapi3.Operation, globalSecurity openapi3.SecurityRequirements) bool {
+	if op.Security != nil {
+		// Explicit operation-level security (may override global)
+		for _, req := range *op.Security {
+			if len(req) > 0 {
+				return true
+			}
+		}
+		// Explicitly set to empty → no auth for this operation
 		return false
 	}
-	for _, req := range *op.Security {
+	// Fall back to global security requirements
+	for _, req := range globalSecurity {
 		if len(req) > 0 {
 			return true
 		}

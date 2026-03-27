@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apisentry/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/parser"
 )
 
 // InventoryTest represents an improper inventory management test

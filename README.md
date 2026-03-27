@@ -42,6 +42,13 @@ TOTAL: 1 CRITICAL · 2 HIGH · 8 MEDIUM
 ### Install
 
 ```bash
+# One-liner (macOS / Linux)
+curl -fsSL https://raw.githubusercontent.com/apisentry-dev/apisentry/master/install.sh | sh
+```
+
+Or download manually:
+
+```bash
 # macOS (Apple Silicon)
 curl -L https://github.com/apisentry-dev/apisentry/releases/latest/download/apisentry-darwin-arm64 -o apisentry
 chmod +x apisentry && sudo mv apisentry /usr/local/bin/

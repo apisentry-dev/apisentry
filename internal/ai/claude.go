@@ -7,7 +7,7 @@ import (
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
-	"github.com/apisentry/apisentry/internal/scanner"
+	"github.com/apisentry-dev/apisentry/internal/scanner"
 )
 
 // AIAnalysis is the result of Claude analyzing a finding

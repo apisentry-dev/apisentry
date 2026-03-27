@@ -1,4 +1,4 @@
-module github.com/apisentry/apisentry
+module github.com/apisentry-dev/apisentry
 
 go 1.26.1
 

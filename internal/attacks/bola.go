@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/apisentry/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/parser"
 )
 
 // BOLATest represents a single BOLA (Broken Object Level Authorization) test case

@@ -1,6 +1,7 @@
 # Build output
 /apisentry
 /apisentry-*
+/dist/
 *.exe
 *.exe~
 *.dll

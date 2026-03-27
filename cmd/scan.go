@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/apisentry/apisentry/internal/ai"
-	"github.com/apisentry/apisentry/internal/engine"
-	"github.com/apisentry/apisentry/internal/parser"
-	"github.com/apisentry/apisentry/internal/report"
-	"github.com/apisentry/apisentry/internal/scanner"
+	"github.com/apisentry-dev/apisentry/internal/ai"
+	"github.com/apisentry-dev/apisentry/internal/engine"
+	"github.com/apisentry-dev/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/report"
+	"github.com/apisentry-dev/apisentry/internal/scanner"
 	"github.com/spf13/cobra"
 )
 

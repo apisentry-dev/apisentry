@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apisentry/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/parser"
 )
 
 // InjectionTest represents an injection / business flow abuse test
@@ -44,8 +44,10 @@ var xssPayloads = []string{
 	`javascript:alert(1)`,
 }
 
+// templatePayloads use a unique multiplication result (7907*6271 = 49584797)
+// that is unlikely to appear naturally in API responses.
 var templatePayloads = []string{
-	`{{7*7}}`, `${7*7}`, `<%= 7*7 %>`, `#{7*7}`,
+	`{{7907*6271}}`, `${7907*6271}`, `<%= 7907*6271 %>`, `#{7907*6271}`,
 }
 
 // businessFlowAbusePaths are high-value endpoints worth extra probing
@@ -194,8 +196,8 @@ func IsInjectionVulnerable(statusCode int, body, testType, payload string) bool 
 			strings.Contains(lower, "$where") ||
 			(statusCode >= 200 && statusCode < 300 && strings.Contains(lower, "\"_id\""))
 	case "template":
-		// Template evaluated: {{7*7}} → 49
-		return strings.Contains(body, "49")
+		// Template evaluated: {{7907*6271}} → 49584797 (unique enough to avoid FP)
+		return strings.Contains(body, "49584797")
 	case "business_flow":
 		return statusCode >= 200 && statusCode < 300
 	}

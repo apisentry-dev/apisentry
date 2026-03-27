@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/apisentry/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/parser"
 )
 
 func makeAuthEndpointWithID() parser.Endpoint {

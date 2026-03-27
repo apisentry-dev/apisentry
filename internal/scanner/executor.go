@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/apisentry/apisentry/internal/attacks"
-	"github.com/apisentry/apisentry/internal/engine"
+	"github.com/apisentry-dev/apisentry/internal/attacks"
+	"github.com/apisentry-dev/apisentry/internal/engine"
 )
 
 // Finding represents a confirmed or potential vulnerability

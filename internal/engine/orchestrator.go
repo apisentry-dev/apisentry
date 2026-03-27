@@ -1,8 +1,8 @@
 package engine
 
 import (
-	"github.com/apisentry/apisentry/internal/attacks"
-	"github.com/apisentry/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/attacks"
+	"github.com/apisentry-dev/apisentry/internal/parser"
 )
 
 // AttackCase is a unified representation of any attack test

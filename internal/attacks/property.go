@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/apisentry/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/parser"
 )
 
 // PropertyTest represents a mass assignment or excessive data exposure test case

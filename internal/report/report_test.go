@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apisentry/apisentry/internal/scanner"
+	"github.com/apisentry-dev/apisentry/internal/scanner"
 )
 
 func makeScanResult() scanner.ScanResult {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apisentry/apisentry/internal/parser"
+	"github.com/apisentry-dev/apisentry/internal/parser"
 )
 
 // FuncAuthTest represents a broken function level authorization test case
