@@ -1,0 +1,161 @@
+---
+title: GitHub Action
+description: Add OWASP API security scanning to every pull request in 2 minutes
+---
+
+## Overview
+
+The `apisentry-dev/apisentry-action` GitHub Action runs APISentry on every PR and:
+
+- **Comments** on the PR with a severity summary
+- **Uploads SARIF** to GitHub Code Scanning
+- **Blocks merges** if critical/high findings are detected
+
+## Basic setup
+
+Create `.github/workflows/api-security.yml` in your repository:
+
+```yaml
+name: API Security Scan
+on: [pull_request]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: apisentry-dev/apisentry-action@v1
+        with:
+          spec-path: openapi.yaml
+          base-url: https://api.yourapp.com
+          token: ${{ secrets.API_TOKEN }}
+          severity-threshold: high
+```
+
+That's it. APISentry will scan on every PR and block merges if HIGH or CRITICAL issues are found.
+
+## Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `spec-path` | Yes | | Path to OpenAPI spec file (JSON or YAML) |
+| `base-url` | No | | Target API base URL (overrides `servers` in spec) |
+| `token` | No | | Bearer token for authenticated scan requests |
+| `severity-threshold` | No | `high` | Fail if findings at this severity exist: `critical` \| `high` \| `medium` \| `low` |
+| `format` | No | `sarif` | Report format: `sarif` \| `json` \| `html` \| `text` |
+| `output-file` | No | `apisentry-results.sarif` | Path to write the report file |
+| `ai-analysis` | No | `false` | Enable AI false-positive filtering |
+| `concurrency` | No | `5` | Number of parallel HTTP workers |
+
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `findings-count` | Total number of findings |
+| `critical-count` | Number of critical findings |
+| `high-count` | Number of high findings |
+| `results-file` | Path to the generated report file |
+
+## Storing secrets
+
+Add your API token as a repository secret:
+
+1. Go to **Settings → Secrets and variables → Actions**
+2. Click **New repository secret**
+3. Name: `API_TOKEN`, Value: your Bearer token
+
+For AI analysis, add `ANTHROPIC_API_KEY` the same way.
+
+## Enable AI analysis
+
+```yaml
+- uses: apisentry-dev/apisentry-action@v1
+  with:
+    spec-path: openapi.yaml
+    base-url: https://api.yourapp.com
+    token: ${{ secrets.API_TOKEN }}
+    ai-analysis: 'true'
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+## Use outputs in subsequent steps
+
+```yaml
+- uses: apisentry-dev/apisentry-action@v1
+  id: api-scan
+  with:
+    spec-path: openapi.yaml
+    base-url: https://api.yourapp.com
+
+- name: Print findings
+  run: |
+    echo "Total findings: ${{ steps.api-scan.outputs.findings-count }}"
+    echo "Critical: ${{ steps.api-scan.outputs.critical-count }}"
+```
+
+## Scan a staging environment on PR
+
+```yaml
+name: API Security Scan
+on: [pull_request]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deploy your service to staging first
+      - name: Deploy to staging
+        run: ./scripts/deploy-staging.sh
+
+      # Then scan it
+      - uses: apisentry-dev/apisentry-action@v1
+        with:
+          spec-path: openapi.yaml
+          base-url: https://staging.api.yourapp.com
+          token: ${{ secrets.STAGING_API_TOKEN }}
+          severity-threshold: high
+          ai-analysis: 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+## PR comment example
+
+When findings are detected, APISentry posts a comment:
+
+```
+🔴 APISentry Security Scan — CRITICAL issues found
+
+| Severity | Count |
+|----------|-------|
+| 🔴 Critical | 1 |
+| 🟠 High | 2 |
+| 📊 Total | 11 |
+
+Review the findings before merging.
+```
+
+## Code Scanning integration
+
+SARIF results appear in the **Security → Code scanning** tab of your repository. Each finding shows:
+
+- Vulnerability type and OWASP ID
+- Affected endpoint
+- Severity level
+- Remediation guidance
+
+<Tip>
+Enable **Branch protection rules** → require "APISentry" status check to pass before merging.
+</Tip>

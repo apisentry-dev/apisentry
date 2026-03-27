@@ -1,0 +1,126 @@
+---
+title: CLI Reference
+description: Complete reference for the apisentry scan command
+---
+
+## Synopsis
+
+```
+apisentry scan --spec <file> --target <url> [flags]
+```
+
+## Required flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--spec` | `-s` | Path to OpenAPI spec file (JSON or YAML, 2.0 / 3.0 / 3.1) |
+| `--target` | `-t` | Base URL of the running API to scan |
+
+## Optional flags
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--token` | | | Bearer token for authenticated requests |
+| `--format` | `-f` | `text` | Output format: `text` \| `json` \| `html` \| `sarif` |
+| `--output` | `-o` | stdout | Write report to file |
+| `--ai` | | `false` | Enable AI false-positive filtering (requires `ANTHROPIC_API_KEY`) |
+| `--concurrency` | | `5` | Number of parallel HTTP workers |
+| `--dry-run` | | `false` | Generate attack plan without sending HTTP requests |
+
+## Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Anthropic API key for AI analysis (`--ai` flag) |
+
+## Output formats
+
+### `text` (default)
+
+Human-readable output with severity, endpoint, and description.
+
+```
+[1] CRITICAL — Broken Auth (API2:2023)
+    GET /api/orders/42 → HTTP 200 (confidence: 90%)
+    Auth bypass: GET /api/orders/{orderId} with NO auth token
+```
+
+### `json`
+
+Machine-readable JSON with all findings and metadata.
+
+```json
+{
+  "target": "https://api.yourapp.com",
+  "spec_file": "openapi.yaml",
+  "duration_ms": 12400,
+  "findings": [
+    {
+      "category": "Broken Auth",
+      "severity": "CRITICAL",
+      "method": "GET",
+      "endpoint": "/api/orders/42",
+      "description": "Auth bypass: GET /api/orders/{orderId} with NO auth token",
+      "evidence": "",
+      "status_code": 200,
+      "confidence": 90
+    }
+  ],
+  "summary": {
+    "critical": 1,
+    "high": 2,
+    "medium": 8,
+    "low": 0,
+    "total": 11
+  }
+}
+```
+
+### `html`
+
+Standalone HTML report with collapsible findings, severity badges, and remediation guidance.
+
+### `sarif`
+
+SARIF 2.1.0 format for GitHub Code Scanning and other SAST tooling.
+
+```yaml
+# Upload SARIF to GitHub in a workflow:
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: results.sarif
+```
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Scan completed successfully (findings may be present) |
+| `1` | Fatal error (spec not found, target unreachable, parse failure) |
+
+<Note>
+APISentry always exits `0` even if vulnerabilities are found. Use the [GitHub Action](/github-action) to fail CI on critical/high findings.
+</Note>
+
+## Examples
+
+```bash
+# Dry run — inspect the attack plan without scanning
+apisentry scan --spec api.yaml --target https://staging.api.com --dry-run
+
+# Save an HTML report
+apisentry scan --spec api.yaml --target https://api.com \
+  --format html --output report.html
+
+# CI mode: SARIF + AI + fail on high
+ANTHROPIC_API_KEY=$API_KEY apisentry scan \
+  --spec api.yaml \
+  --target https://api.com \
+  --token $JWT \
+  --format sarif \
+  --output results.sarif \
+  --ai
+
+# High concurrency (faster, more load on target)
+apisentry scan --spec api.yaml --target https://api.com --concurrency 20
+```

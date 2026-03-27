@@ -1,0 +1,49 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "APISentry",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0F172A",
+    "light": "#38BDF8",
+    "dark": "#0F172A",
+    "anchors": {
+      "from": "#0F172A",
+      "to": "#38BDF8"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/apisentry-dev/apisentry"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Join Beta",
+    "url": "https://apisentry.dev/#waitlist"
+  },
+  "tabs": [],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "quickstart",
+        "vulnerabilities"
+      ]
+    },
+    {
+      "group": "Reference",
+      "pages": [
+        "cli-reference",
+        "github-action"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/apisentry-dev/apisentry",
+    "twitter": "https://twitter.com/apisentry_ai"
+  }
+}

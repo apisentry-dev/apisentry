@@ -96,7 +96,7 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - uses: apisentry/apisentry-action@v1
+      - uses: apisentry-dev/apisentry@v1
         with:
           spec-path: openapi.yaml
           base-url: https://api.yourapp.com

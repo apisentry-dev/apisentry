@@ -1,0 +1,174 @@
+---
+title: What APISentry Detects
+description: OWASP API Top 10 vulnerability coverage and detection methodology
+---
+
+APISentry tests your API against the [OWASP API Security Top 10 (2023)](https://owasp.org/API-Security/). Each category maps to a set of automated attack tests generated from your OpenAPI spec.
+
+## Coverage
+
+| OWASP ID | Vulnerability | Status |
+|----------|--------------|--------|
+| API1:2023 | BOLA — Broken Object Level Authorization | Supported |
+| API2:2023 | Broken Authentication | Supported |
+| API3:2023 | Broken Object Property Level Authorization | Supported |
+| API4:2023 | Unrestricted Resource Consumption | Supported |
+| API5:2023 | Broken Function Level Authorization | Supported |
+| API6:2023 | Unrestricted Access to Sensitive Business Flows | Supported |
+| API7:2023 | Server Side Request Forgery (SSRF) | Supported |
+| API8:2023 | Security Misconfiguration | Supported |
+| API9:2023 | Improper Inventory Management | Supported |
+| API10:2023 | Unsafe Consumption of APIs | Roadmap |
+
+---
+
+## API1 — BOLA
+
+**Broken Object Level Authorization** — accessing another user's resources by changing an ID.
+
+**How APISentry tests this:**
+- Extracts numeric IDs from endpoint paths (e.g. `/orders/{orderId}`)
+- Sends requests with ID values `1`, `2`, adjacent IDs, and large IDs
+- Reports a finding if the server returns HTTP 200 for what should be another user's object
+
+**Example finding:**
+```
+HIGH — BOLA (API1:2023)
+GET /api/shop/orders/2 → HTTP 200 (confidence: 65%)
+BOLA: accessed GET /orders/{orderId} with orderId=2 (unauthorized object)
+```
+
+---
+
+## API2 — Broken Authentication
+
+**How APISentry tests this:**
+- **No token**: calls protected endpoints without any Authorization header
+- **Invalid tokens**: sends malformed JWTs, expired tokens, tokens with `"alg":"none"`
+- **Token bypass**: tests common auth bypass patterns
+
+**Example finding:**
+```
+CRITICAL — Broken Auth (API2:2023)
+GET /api/orders/1 → HTTP 200 (confidence: 45%)
+Auth bypass: endpoint returned 200 with no auth token
+```
+
+---
+
+## API3 — Broken Object Property Level Authorization
+
+**Mass assignment and excessive data exposure.**
+
+**How APISentry tests this:**
+- **Mass assignment**: injects sensitive fields (`isAdmin`, `role`, `verified`, `balance`) into POST/PUT/PATCH request bodies
+- **Data exposure**: scans response bodies for sensitive field names (`password`, `ssn`, `card_number`, `secret`, `token`)
+
+**Example finding:**
+```
+HIGH — Excessive Data Exposure (API3:2023)
+GET /api/orders/1 → HTTP 200
+Leaked fields: [card_number]
+```
+
+---
+
+## API4 — Unrestricted Resource Consumption
+
+**Missing rate limiting on sensitive endpoints.**
+
+**How APISentry tests this:**
+- Sends 20 rapid requests to each endpoint
+- Checks if the server returns HTTP 429 (Too Many Requests) at any point
+- Flags endpoints with no rate limiting as MEDIUM severity
+
+**Example finding:**
+```
+MEDIUM — Unrestricted Resource Consumption (API4:2023)
+POST /identity/api/v2/user/login → HTTP 200 (confidence: 95%)
+Rate limit: 20 rapid requests, no HTTP 429 returned
+```
+
+---
+
+## API5 — Broken Function Level Authorization
+
+**Accessing admin or privileged functions as a regular user.**
+
+**How APISentry tests this:**
+- **Admin path probing**: tests for `/admin`, `/internal`, `/superuser`, `/management` variants
+- **HTTP verb tampering**: tries unexpected methods (TRACE) on standard endpoints
+- **Privilege escalation**: attempts to access higher-privilege endpoint variants
+
+**Example finding:**
+```
+HIGH — Broken Function Level Auth (API5:2023)
+GET /admin/users → HTTP 200
+Admin endpoint accessible without elevated privileges
+```
+
+---
+
+## API7 — SSRF
+
+**Server Side Request Forgery — making the server fetch internal resources.**
+
+**How APISentry tests this:**
+- Injects SSRF payloads into URL parameters and request body fields that accept URLs
+- Tests for AWS metadata (`169.254.169.254`), GCP metadata, and internal hostnames
+- Reports a finding only when response contains definitive metadata signatures (not just HTTP 200)
+
+---
+
+## API8 — Security Misconfiguration
+
+**Exposed debug endpoints, sensitive files, and missing security headers.**
+
+**How APISentry tests this:**
+- **Sensitive paths**: probes `/.env`, `/config`, `/swagger-ui.html`, `/.git/config`, `/actuator`, `/metrics`, `/debug`
+- **Health endpoints**: checks `/health`, `/healthz`, `/status` for information disclosure
+- **Security headers**: verifies responses include `X-Content-Type-Options`, `Strict-Transport-Security`, `X-Frame-Options`
+
+**Example finding:**
+```
+HIGH — Security Misconfiguration (API8:2023)
+GET /.env → HTTP 200 (confidence: 95%)
+Exposed .env file — may contain secrets
+```
+
+---
+
+## API9 — Improper Inventory Management
+
+**Shadow APIs and deprecated endpoints still running in production.**
+
+**How APISentry tests this:**
+- **Shadow versions**: probes `/v0/`, `/v2/`, `/v3/` variants of every endpoint
+- **Deprecated paths**: tests `_old`, `.bak`, `_legacy`, `_deprecated`, `_v1`, `-old` path variants
+- **Shadow environments**: checks for `dev/`, `staging/`, `test/` environment prefixes in production
+
+**Example finding:**
+```
+MEDIUM — Improper Inventory Management (API9:2023)
+GET /v0/users → HTTP 200
+Shadow API version accessible — may lack current security controls
+```
+
+---
+
+## AI analysis
+
+With `--ai`, each finding is sent to Claude Haiku for classification:
+
+- **Confirmed** — real vulnerability, confidence score updated
+- **Potential** — needs manual verification
+- **False positive** — removed from results
+
+AI analysis adds remediation advice to each finding description:
+
+```
+Fix: 1. IMPLEMENT: Add object-level authorization checks — verify the
+authenticated user owns the orderId before returning data.
+2. VALIDATE: Implement middleware that cross-references user claims
+(from JWT/session) with resource ownership...
+```

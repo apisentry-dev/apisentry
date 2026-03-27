@@ -1,0 +1,138 @@
+---
+title: Quick Start
+description: Scan your API for OWASP Top 10 vulnerabilities in under 2 minutes
+---
+
+## Install
+
+<CodeGroup>
+
+```bash macOS / Linux
+curl -L https://github.com/apisentry-dev/apisentry/releases/latest/download/apisentry-linux-amd64 \
+  -o apisentry
+chmod +x apisentry && sudo mv apisentry /usr/local/bin/
+```
+
+```bash Windows
+# Download apisentry-windows-amd64.exe from the latest release:
+# https://github.com/apisentry-dev/apisentry/releases/latest
+```
+
+```bash Build from source
+git clone https://github.com/apisentry-dev/apisentry
+cd apisentry
+go build -o apisentry .
+sudo mv apisentry /usr/local/bin/
+```
+
+</CodeGroup>
+
+## Run your first scan
+
+You need two things: an OpenAPI spec and a running target API.
+
+```bash
+apisentry scan --spec openapi.yaml --target https://api.yourapp.com
+```
+
+**Sample output:**
+
+```
+╔══════════════════════════════════════╗
+║       APISentry Security Scanner     ║
+╚══════════════════════════════════════╝
+
+  Spec:   openapi.yaml
+  Target: https://api.yourapp.com
+  Mode:   active scan
+
+✓ Parsed 47 endpoints
+✓ Generated 891 attack tests
+
+[1] CRITICAL — Broken Auth (API2:2023)
+    GET /api/orders/42 → HTTP 200 without token
+
+[2] HIGH — BOLA (API1:2023)
+    GET /api/users/1337 → HTTP 200 (unauthorized object)
+
+[3] HIGH — Excessive Data Exposure (API3:2023)
+    card_number found in response body
+
+Target:   https://api.yourapp.com
+Tests:    891
+Duration: 12.4s
+
+CRITICAL: 1
+HIGH:     2
+MEDIUM:   8
+TOTAL:    11
+```
+
+## Authenticate your scan
+
+If your API requires a Bearer token:
+
+```bash
+apisentry scan \
+  --spec openapi.yaml \
+  --target https://api.yourapp.com \
+  --token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+APISentry uses this token for authenticated requests. It also **deliberately tests unauthenticated access** to detect broken auth vulnerabilities.
+
+## Save a report
+
+<CodeGroup>
+
+```bash HTML report
+apisentry scan \
+  --spec openapi.yaml \
+  --target https://api.yourapp.com \
+  --format html \
+  --output report.html
+```
+
+```bash JSON
+apisentry scan \
+  --spec openapi.yaml \
+  --target https://api.yourapp.com \
+  --format json \
+  --output results.json
+```
+
+```bash SARIF (GitHub Code Scanning)
+apisentry scan \
+  --spec openapi.yaml \
+  --target https://api.yourapp.com \
+  --format sarif \
+  --output results.sarif
+```
+
+</CodeGroup>
+
+## Enable AI analysis
+
+AI analysis uses Claude Haiku to review each finding, remove false positives, and add remediation advice:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... apisentry scan \
+  --spec openapi.yaml \
+  --target https://api.yourapp.com \
+  --ai
+```
+
+<Info>
+AI analysis costs ~$0.002 per finding. A typical scan with 20 findings costs under $0.05.
+</Info>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="GitHub Action" icon="github" href="/github-action">
+    Add APISentry to your CI/CD pipeline in 2 minutes
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli-reference">
+    All flags, environment variables, and output formats
+  </Card>
+</CardGroup>

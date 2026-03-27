@@ -83,8 +83,10 @@ func BuildPlan(endpoints []parser.Endpoint, baseURL string) Plan {
 	for _, t := range attacks.GeneratePropertyTests(endpoints, baseURL) {
 		tc := t
 		sev := "HIGH"
-		if tc.TestType == "exposure_check" {
+		if tc.TestType == "mass_assignment" {
 			sev = "HIGH"
+		} else {
+			sev = "MEDIUM"
 		}
 		plan.Cases = append(plan.Cases, AttackCase{
 			Name:         tc.Name,
