@@ -1,10 +1,10 @@
-name: API Security Scan
+# This is an EXAMPLE workflow showing how to integrate APISentry.
+# Copy this file into YOUR repo's .github/workflows/ and adjust the inputs.
+# It is set to manual trigger only so it does not run in the APISentry repo itself.
+name: API Security Scan (Example)
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+  workflow_dispatch:  # manual trigger only — copy to your repo and adjust triggers
 
 jobs:
   api-security:
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: APISentry API Security Scan
-        uses: apisentry/apisentry-action@v1
+        uses: apisentry-dev/apisentry@v0.1.0
         with:
           spec-path: openapi.yaml          # path to your OpenAPI spec
           base-url: https://api.example.com
