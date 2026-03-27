@@ -1,0 +1,70 @@
+version: 2
+
+project_name: apisentry
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    binary: apisentry
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    format: binary
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: apisentry-dev
+    name: apisentry
+  draft: false
+  prerelease: auto
+  name_template: "v{{.Version}}"
+  header: |
+    ## APISentry {{.Version}}
+
+    AI-powered API security scanner covering the full OWASP API Top 10.
+
+    ### Install
+
+    ```bash
+    # macOS (Apple Silicon)
+    curl -L https://github.com/apisentry-dev/apisentry/releases/download/{{.Tag}}/apisentry-darwin-arm64 -o apisentry
+    chmod +x apisentry && sudo mv apisentry /usr/local/bin/
+
+    # macOS (Intel)
+    curl -L https://github.com/apisentry-dev/apisentry/releases/download/{{.Tag}}/apisentry-darwin-amd64 -o apisentry
+    chmod +x apisentry && sudo mv apisentry /usr/local/bin/
+
+    # Linux
+    curl -L https://github.com/apisentry-dev/apisentry/releases/download/{{.Tag}}/apisentry-linux-amd64 -o apisentry
+    chmod +x apisentry && sudo mv apisentry /usr/local/bin/
+    ```
+
+    Windows: download `apisentry-windows-amd64.exe` from the assets below.
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"

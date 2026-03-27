@@ -30,7 +30,7 @@ TOTAL: 1 CRITICAL · 2 HIGH · 8 MEDIUM
 
 ## Features
 
-- **OWASP API Top 10** — Full coverage: API1 through API5 in current version, API6-10 coming
+- **OWASP API Top 10** — Full coverage of all 10 categories: BOLA, broken auth, mass assignment, rate limiting, function-level auth, injection, SSRF, misconfig, inventory management
 - **CI/CD native** — GitHub Actions integration with SARIF upload and PR comments
 - **AI false-positive filtering** — Claude Haiku 4.5 classifies findings, reduces noise
 - **Multiple output formats** — text, JSON, HTML report, SARIF 2.1.0
@@ -42,12 +42,20 @@ TOTAL: 1 CRITICAL · 2 HIGH · 8 MEDIUM
 ### Install
 
 ```bash
-# macOS / Linux
-curl -L https://github.com/apisentry/apisentry/releases/latest/download/apisentry-linux-amd64 -o apisentry
+# macOS (Apple Silicon)
+curl -L https://github.com/apisentry-dev/apisentry/releases/latest/download/apisentry-darwin-arm64 -o apisentry
 chmod +x apisentry && sudo mv apisentry /usr/local/bin/
 
-# Windows
-# Download apisentry-windows-amd64.exe from Releases
+# macOS (Intel)
+curl -L https://github.com/apisentry-dev/apisentry/releases/latest/download/apisentry-darwin-amd64 -o apisentry
+chmod +x apisentry && sudo mv apisentry /usr/local/bin/
+
+# Linux
+curl -L https://github.com/apisentry-dev/apisentry/releases/latest/download/apisentry-linux-amd64 -o apisentry
+chmod +x apisentry && sudo mv apisentry /usr/local/bin/
+
+# Windows — download apisentry-windows-amd64.exe from:
+# https://github.com/apisentry-dev/apisentry/releases/latest
 ```
 
 ### Run a scan
@@ -123,7 +131,8 @@ openapi.yaml
 ┌─────────────┐     ┌──────────────────────────────────────────┐
 │   Parser    │────▶│              Orchestrator                 │
 │ (kin-openapi│     │  BOLA · BrokenAuth · Property ·          │
-│   3.0/3.1)  │     │  RateLimit · FuncAuth                    │
+│   3.0/3.1)  │     │  RateLimit · FuncAuth · Injection ·      │
+│             │     │  SSRF · Misconfig · Inventory            │
 └─────────────┘     └──────────────────┬───────────────────────┘
                                        │ 891 AttackCases
                                        ▼
@@ -154,16 +163,16 @@ openapi.yaml
 | API3:2023 | Broken Object Property Level Authorization | ✅ |
 | API4:2023 | Unrestricted Resource Consumption | ✅ |
 | API5:2023 | Broken Function Level Authorization | ✅ |
-| API6:2023 | Unrestricted Access to Sensitive Business Flows | 🚧 |
-| API7:2023 | Server Side Request Forgery | 🚧 |
-| API8:2023 | Security Misconfiguration | 🚧 |
-| API9:2023 | Improper Inventory Management | 🚧 |
-| API10:2023 | Unsafe Consumption of APIs | 🚧 |
+| API6:2023 | Unrestricted Access to Sensitive Business Flows | ✅ |
+| API7:2023 | Server Side Request Forgery | ✅ |
+| API8:2023 | Security Misconfiguration | ✅ |
+| API9:2023 | Improper Inventory Management | ✅ |
+| API10:2023 | Unsafe Consumption of APIs | ✅ |
 
 ## Build from Source
 
 ```bash
-git clone https://github.com/apisentry/apisentry
+git clone https://github.com/apisentry-dev/apisentry
 cd apisentry
 go build -o apisentry .
 
@@ -181,4 +190,4 @@ CLI: MIT. SaaS platform: proprietary.
 
 ---
 
-**[apisentry.ai](https://apisentry.ai)** · [Join beta waitlist](https://apisentry.ai/#waitlist) · [Twitter](https://twitter.com/apisentry_ai)
+**[apisentry-web.vercel.app](https://apisentry-web.vercel.app)** · [Join beta waitlist](https://apisentry-web.vercel.app/#waitlist) · [Twitter](https://twitter.com/apisentry_ai)

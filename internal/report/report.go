@@ -159,14 +159,22 @@ func sarifRuleID(category string) string {
 	switch {
 	case strings.Contains(category, "API1"), strings.Contains(category, "BOLA"):
 		return "OWASP-API1"
-	case strings.Contains(category, "API2"), strings.Contains(category, "Auth"):
+	case strings.Contains(category, "API5"), strings.Contains(category, "Function"):
+		return "OWASP-API5"
+	case strings.Contains(category, "API2"), strings.Contains(category, "Broken Auth"):
 		return "OWASP-API2"
 	case strings.Contains(category, "API3"), strings.Contains(category, "Mass"):
 		return "OWASP-API3"
 	case strings.Contains(category, "API4"), strings.Contains(category, "Rate"):
 		return "OWASP-API4"
-	case strings.Contains(category, "API5"), strings.Contains(category, "Function"):
-		return "OWASP-API5"
+	case strings.Contains(category, "API6"), strings.Contains(category, "Injection"):
+		return "OWASP-API6"
+	case strings.Contains(category, "API7"), strings.Contains(category, "SSRF"):
+		return "OWASP-API7"
+	case strings.Contains(category, "API8"), strings.Contains(category, "Misconfiguration"):
+		return "OWASP-API8"
+	case strings.Contains(category, "API9"), strings.Contains(category, "Inventory"):
+		return "OWASP-API9"
 	default:
 		return "OWASP-API-UNKNOWN"
 	}
